@@ -2,7 +2,7 @@
 
 - An Open Source *Heterogeneity-Aware* Federated Learning Platform
 - This repository is based on a fork of [Leaf](https://leaf.cmu.edu/), a benchmark for federated settings.
-- Target Conference: [IMC'20](https://conferences.sigcomm.org/imc/2020/)
+- Target Conference: [WWW'20](https://www2021.thewebconf.org/)
 - paper: [Characterizing the Influence of Heterogeneity in Federated Learning]()
 
 
@@ -11,7 +11,7 @@
 ### example
 
 ```bash
-git clone https://github.com/imc20submission/flash.git
+git clone https://github.com/www21submission/flash.git
 pip3 install -r requirements.txt
 # download data, modify code if needed, refer to Chapter.Dataset for more details
 cd models/
