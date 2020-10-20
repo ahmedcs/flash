@@ -3,7 +3,22 @@
 - An Open Source *Heterogeneity-Aware* Federated Learning Platform
 - This repository is based on a fork of [Leaf](https://leaf.cmu.edu/), a benchmark for federated settings.
 - Target Conference: [WWW'21](https://www2021.thewebconf.org/)
-- paper: [Characterizing the Influence of Heterogeneity in Federated Learning]()
+- paper: [Characterizing Impacts of Heterogeneity in Federated Learning upon Large-Scale Smartphone Data]()
+
+## What is FLASH?
+
+Briefly speaking, we develop FLASH to incoporate **heterogeneity** into the federated learning simulation process. We mainly follow Google's [FL protocol](https://arxiv.org/pdf/1902.01046.pdf) to implement FLASH, so compared to other platforms, we add many additional system configurations, e.g., deadline. For these configurations, see more details in the [config file](#config).
+
+### Heterogeneity
+
+**Hardware Heterogeneity**: Each client is bundled with a device type. Each device type has different training speeds and network speeds. We also support self-defined device type(-1) whose parameter can be set manually for more complexed simulation. 
+
+The source code for measure the on-device training time is available in the [android](android/) directory
+
+**State(Behavior) Heterogeneity**: the state and running environment of participating clients can be various and dynamic. We follow [Google's FL system](https://arxiv.org/pdf/1902.01046.pdf), i.e., clients are available for training only when the device is idle, charging, and connected to WiFi. To simulate state heterogeneity, we provide a large-scale real-world state trace, which can be accessed [here](https://drive.google.com/file/d/1M62hlt2KpF6IRGZi_gEDv7DE3_s0_ihD/view?usp=sharing).
+
+Note: FLASH will run in a heterogeneity-unaware (ideal) mode if trace file is not found or `hard_hete` and `behav_hete` are set to `False`
+
 
 
 ## How to run it
@@ -11,131 +26,79 @@
 ### example
 
 ```bash
+# 1. Clone and install requirments
 git clone https://github.com/www21submission/flash.git
 pip3 install -r requirements.txt
-# download data, modify code if needed, refer to Chapter.Dataset for more details
+
+# 2. Download state traces
+# modify the file path in [models/client.py](models/client.py), i.e. with open('/path/to/state_traces.json', 'r', encoding='utf-8') as f: 
+
+# 3. Download a benchmark dataset, go to directory of respective dataset `data/$DATASET` for instructions on generating the benchmark dataset
+
+# 4. Run
 cd models/
 python3 main.py [--config yourconfig.cfg]
 # use --config option to specify the config-file, default.cfg will be used if not specified
 # the output log is CONFIG_FILENAME.log
 ```
 
+<h3 id="config">Config File</h3>
 
-
-### results in paper
-
-here is some examples for experiment result we reported in our paper
-
-You can just modify the `models/default.cfg` and then run `python main.py`, here are some pieces of config details we used
-
-- exp1
-- exp2
-- exp3
-
-
-## What is FLASH?
-
-Briefly speaking, we develop FLASH to incoporate **heterogeneity** into the federated learning simulation process. 
-
-
-### Deadline
-
-We add deadline setting for simulating failed downloading/uploading and time out training. Now deadline follows a normal distribution in each round, and each client has the same deadline in one round. You can set the deadline's normal distribution parameters in the config file.
-
-
-
-### Heterogeneity
-
-#### Hardware Heterogeneity
-
-Each client is bundled with a device type. Each device type has different training speeds and network speeds. We also support self-defined device type(-1) whose parameter you can set in the code manually for more complexed simulation. Note that if a client's device is not specified i.e. None, the program will use real training time instead of the simulation time, which is not recommended.
-
-The source code for measure the on-device training time is available in the [android](android/) directory
-
-
-
-#### Behavior Heterogeneity
-
-Each client is bundled with a timer, which is bundled with one trace. Timer gets the available time according to [google definition](https://arxiv.org/pdf/1902.01046.pdf). FLASH will run in ideal mode if trace file is not found or `behav_hete` is set to `False`
-
-
-
-#### Data Heterogeneity
-
-- data in each client is non-i.i.d
-- you can set `max_sample` to control the max sample number in each client
-
-
-
-### Round Failure
-
-In federated settings, if there are not enough devices to upload the results in a round, then this round will be regarded as a failed round and the global model will not be updated. To simulate it, we add a update_frac parameter. If the uploaded fraction is smaller than update_frac, then this round will fail. You can also set it in the config file.
-
-
-
-### Config
-
-To simplify the command line arguments, we move most of the parameters to a config file. Also, we add some other parameters as put above for better simulation. Here are some details.
+To simplify the command line arguments, we move most of the parameters to a <span id="jump">config file</span>. Below is a detailed example.
 
 ```bash
-# line started with # (commented) will be ignored
-behav_hete True 
-# bool, whether to simulate behavior heterogeneity
-hard_hete True
-# bool, whether to simulate hardware heterogeneity, which contains differential on-device training time and network speed
-no_training False 
-# bool, whether to run in no_training mode, skip training process if True
-real_world False
-# bool, whether to run read-world DL dataset
-dataset femnist 
-# dataset to use
-model cnn 
-# file that defines the DNN model
-num_rounds 500 
-# number of FL rounds to run
-learning_rate 0.01 
-# learning-rate of DNN
-eval_every 5
-# evaluate every # rounds, -1 for not evaluate
-clients_per_round 100 
-# expected clients in each round
-min_selected 60 
-# min selected clients number in each round, fail if not satisfied
-max_sample 340 
-# number of max sampleto use in each selected client
-batch_size 10
-# batch-size for training 
-num_epochs 5 
-# number epochs imn each client in each round
-seed 0 
-# basic random seed
-round_ddl 270 0 
-# μ and σ for deadline, which follows a normal distribution
-update_frac 0.8  
-# min update fraction in each round, round succeeds only when fraction of succeeded client not less than #
-max_client_num -1
-# 
+## whether to consider heterogeneity
+behav_hete False # bool, whether to simulate state(behavior) heterogeneity
+hard_hete False # bool, whether to simulate hardware heterogeneity, which contains differential on-device training time and network speed
 
-# NOTE! [aggregate_algorithm, fedprox*, structure_k, qffl*] is mutually-exclusive
-aggregate_algorithm SucFedAvg 
-## choose in [SucFedAvg, FedAvg], please refer to models/server.py for more details
-# compress_algo grad_drop
-## gradiant compress algorithm, choose in [grad_drop, sign_sgd], not use if commented
-fedprox True
-fedprox_mu 0.5
-fedprox_active_frac 0.8
-## whether to apply fedprox and params needed, please refer to the sysml'20 for more details
+
+## no training mode to tune system configurations
+no_training False # bool, whether to run in no_training mode, skip training process if True
+
+
+## ML related configurations
+dataset femnist # dataset to use
+model cnn # file that defines the DNN model
+learning_rate 0.01 # learning-rate of DNN
+batch_size 10 # batch-size for training 
+
+
+## system configurations, refer to https://arxiv.org/abs/1812.02903 for more details
+num_rounds 500 # number of FL rounds to run
+clients_per_round 100 # expected clients in each round
+min_selected 60 # min selected clients number in each round, fail if not satisfied
+max_sample 340 #  max number of samples to use in each selected client
+eval_every 5 # evaluate every # rounds, -1 for not evaluate
+num_epochs 5 # number of training epochs (E) for each client in each round
+seed 0 # basic random seed
+round_ddl 270 0 # μ and σ for deadline, which follows a normal distribution
+update_frac 0.8  # min update fraction in each round, round fails when fraction of clients that successfully upload their is not less than "update_frac"
+max_client_num -1 # max number of clients in the simulation process, -1 for infinite
+
+
+### ----- NOTE! below are advanced configurations. 
+### ----- Strongly recommend: specify these configurations only after reading the source code. 
+### ----- Configuration items of [aggregate_algorithm, fedprox*, structure_k, qffl*] are mutually-exclusive 
+
+## basic algorithm
+aggregate_algorithm SucFedAvg # choose in [SucFedAvg, FedAvg], please refer to models/server.py for more details. In the configuration file, SucFedAvg refers to the "FedAvg" algorithm described in https://arxiv.org/pdf/1602.05629.pdf
+
+## compression algorithm
+# compress_algo grad_drop # gradiant compress algorithm, choose in [grad_drop, sign_sgd], not use if commented
 # structure_k 100
 ## the k for structured update, not use if commented, please refer to the arxiv for more 
-# qffl True
+
+## advanced aggregation algorithms
+# fedprox True # whether to apply fedprox and params needed, please refer to the sysml'20 (https://arxiv.org/pdf/1812.06127.pdf) for more details
+# fedprox_mu 0.5
+# fedprox_active_frac 0.8
+
+# qffl True # whether to apply qffl(q-fedavg) and params needed, please refer to the ICLR'20 (https://arxiv.org/pdf/1905.10497.pdf) for more
 # qffl_q 5
-## whether to apply qffl and params needed, please refer to the ICLR'20 for more
 ```
 
 
-## Datasets
-
-### DL Datasets
+## Benchmark Datasets
 
 #### FEMNIST
 
@@ -161,40 +124,26 @@ fedprox_active_frac 0.8
 
 
 
+## Results in the paper
 
-### User Behavior Trace
+Config file and results are in the `paper_experiments` folder. You can just modify the `models/default.cfg` and then run `python main.py` to reproduce all the experiments in our paper. The experiments can be devided into the following categories:
 
-- you can download the user behavior trace data [here](https://drive.google.com/file/d/1M62hlt2KpF6IRGZi_gEDv7DE3_s0_ihD/view?usp=sharing).
-
-- modify the file path in [models/client.py](models/client.py), 
-
-  i.e.  `with open('/path/to/user_behavior_trace.json', 'r', encoding='utf-8') as f: ` 
-
-- The trace tracks the device’s meta information and its status changes, including battery chargestatus, battery level, network environment, screen lock status, and screen on and off. (See more details in our [manuscript]().)
+- Basic FL algorithm
+- Advanced FL algorithms
+- Breakdown of Heterogeneity
+- Device Failure
+- Participation Bias
 
 
 
 ## On-device Training
 
-the code we used to measure the on-device training time is in `OnDeviceTraining` directory
-
-please refer to the [doc](OnDeviceTraining/README.md) for more details
+the code we used to measure the on-device training time is in `OnDeviceTraining` folder. Please refer to the [doc](OnDeviceTraining/README.md) for more details
 
 
 
 ## Notes
 
-- Install the libraries listed in ```requirements.txt```
-
-  - i.e. with pip: run ```pip3 install -r requirements.txt```
-
-- Go to directory of respective dataset `data/$DATASET` for instructions on generating data
-
-- please consider to cite our paper if you use the code or data in your research project
-
-  ```
-  @inproceeding{
-  }
-  ```
+- please consider to cite our paper if you use the code or data in your research project.
 
   
